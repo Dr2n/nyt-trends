@@ -4,7 +4,8 @@
   "description": "visualisation of newspaper headlines from 1851, for COSC3000",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -12,5 +13,9 @@
   },
   "author": "darren-fu",
   "license": "ISC",
-  "homepage": "https://bitbucket.org/dr2n/newspaper-visualisation#readme"
+  "homepage": "https://bitbucket.org/dr2n/newspaper-visualisation#readme",
+  "dependencies": {
+    "mysql": "github:mysqljs/mysql",
+    "request": "^2.85.0"
+  }
 }
