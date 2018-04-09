@@ -1,0 +1,94 @@
+<html>
+
+<head>
+    <title>NYT Trends</title>
+    <style>
+        body {
+            overflow: hidden;
+        }
+
+        .line {
+            fill: none;
+            stroke: #ffab00;
+            stroke-width: 5;
+        }
+
+        .dot {
+            fill: #ffab00;
+            stroke: #fff;
+        }
+    </style>
+</head>
+<svg width="960" height="0"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+
+    let margin = { top: 50, right: 50, bottom: 50, left: 50 },
+        width = window.innerWidth - margin.left - margin.right,
+        height = window.innerHeight - margin.top - margin.bottom;
+
+    d3.csv('data.csv', dataset => {
+        let n = dataset.length;
+
+        let max = 0;
+        dataset.forEach( (element) => {
+            if (+element.count > max) max = +element.count;
+        });
+
+        let xScale = d3.scaleLinear()
+            .domain([dataset[0].year, dataset[n - 1].year - 1])
+            .range([0, width]);
+
+        let yScale = d3.scaleLinear()
+            .domain([0, max])
+            .range([height, 0]);
+
+        let line = d3.line()
+            .x(function (d, i) { return xScale(d.year); })
+            .y(function (d) { return yScale(d.count); })
+            .curve(d3.curveMonotoneX)
+
+        let svg = d3.select('body')
+            .append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+            .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+        svg.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', `translate(0, ${height})`)
+            .call(d3.axisBottom(xScale));
+
+        svg.append('g')
+            .attr('class', 'y axis')
+            .call(d3.axisLeft(yScale));
+
+        svg.append('path')
+            .datum(dataset)
+            .attr('class', 'line')
+            .attr('d', line);
+
+        svg.selectAll('.dot')
+            .data(dataset)
+            .enter()
+            .append('circle')
+            .attr('class', 'dot')
+            .attr('cx', (d, i) => xScale(d.year))
+            .attr('cy', (d) => yScale(d.count))
+            .attr('x', d => d.year)
+            .attr('y', d => d.count)
+            .attr('r', 3)
+            .attr('onmousedown','tooltip(evt)');
+    });
+
+    function tooltip(evt) {
+        let x = evt.target.getAttribute('x');
+        let y = evt.target.getAttribute('y');
+
+        alert(`Year: ${x}, Count: ${y}`);
+    }
+
+</script>
+</html>
