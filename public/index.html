@@ -1,0 +1,261 @@
+<html>
+
+<head>
+    <title>NYT Trends</title>
+    <style>
+        body {
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
+        }
+
+        .line {
+            fill: none;
+            /*stroke: #ffab00;*/
+            stroke-width: 5;
+        }
+
+        .dot {
+            fill: black;
+            stroke: #fff;
+        }
+
+        svg {
+            transition: opacity 0.4s;
+            opacity: 0;
+            fill-opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #graphWrapper {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        input {
+            position: fixed;
+            left: 100px;
+            top: 60px;
+            height: 60px;
+            width: 350px;
+            border: solid #333333;
+            border-width: 0px 0px 1.5px 0px;
+            font-size: 36px;
+            padding-left: 10px;
+            background: rgba(0, 0, 0, 0);
+
+        }
+
+        .tooltip {
+            text-align: center;
+            font-size: 14px;
+            padding: 10px;
+            width: 100px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px dotted black;
+            background-color: white;
+            position: absolute;
+            transform: translate(0, -20px);
+        }
+    </style>
+</head>
+<svg width="960" height="0" style="opacity: 1;"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+    const port = 3000;
+    let count = 0;
+
+    const materials = [
+        '#F44336',
+        '#E91E63',
+        '#9C27B0',
+        '#673AB7',
+        '#3F51B5',
+        '#2196F3',
+        '#03A9F4',
+        '#00BCD4',
+        '#009688',
+        '#4CAF50',
+        '#8BC34A',
+        '#CDDC39',
+        '#FFEB3B',
+        '#FFC107',
+        '#FF9800',
+        '#FF5722',
+        '#795548',
+        '#9E9E9E',
+        '#607D8B'
+    ]
+
+    let margin = { top: 50, right: 50, bottom: 50, left: 50 },
+        width = window.innerWidth - margin.left - margin.right,
+        height = window.innerHeight - margin.top - margin.bottom;
+
+    function clear() {
+        let graphs = document.getElementsByClassName('graph');
+        for (let i = 0; i < graphs.length; i++) {
+            if (graphs[i]) {
+                graphs[i].style.opacity = '0';
+                setTimeout(() => {
+                    graphs[i].remove();
+                }, 300);
+            }
+        }
+    }
+
+    function graph(queryString) {
+
+
+        fetch(`/query/?phrase=${queryString}`)
+            .then(res => res.json())
+            .then(data => {
+                let n = 165;
+                console.log(data);
+                dataset = new Array(166);
+                for (let i = 0; i <= 166; i++) {
+                    dataset[i] = {year: i + 1851, count: 0};
+                }
+                for (i in data) {
+                    dataset[parseInt(data[i].year) - 1851].count = data[i].count;
+                }
+
+                let max = 0;
+                dataset.forEach( element => {
+                    if (+element.count > max) max = +element.count;
+                });
+
+                let xScale = d3.scaleLinear()
+                    .domain([1851, 2016])
+                    .range([0, width]);
+
+                let yScale = d3.scaleLinear()
+                    .domain([0, max])
+                    .range([height, 0]);
+
+                let line = d3.line()
+                    .x(function (d, i) { return xScale(d.year); })
+                    .y(function (d) { return yScale(d.count); })
+                    .curve(d3.curveMonotoneX)
+
+                let svg = d3.select('#graphWrapper')
+                    .append('svg')
+                    .attr('class', 'graph')
+                    .attr('width', width + margin.left + margin.right)
+                    .attr('height', height + margin.top + margin.bottom)
+                    .attr('query', queryString)
+                    .append('g')
+                    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+                svg.append('g')
+                    .attr('class', 'x axis')
+                    .attr('transform', `translate(0, ${height})`)
+                    .call(d3.axisBottom(xScale));
+
+                svg.append('g')
+                    .attr('class', 'y axis')
+                    .call(d3.axisLeft(yScale));
+
+                svg.append('path')
+                    .datum(dataset)
+                    .attr('class', 'line')
+                    .attr('style', `stroke: ${materials[(count++) % materials.length]}`)
+                    .attr('d', line);
+
+                svg.selectAll('.dot')
+                    .data(dataset)
+                    .enter()
+                    .append('circle')
+                    .attr('class', 'dot')
+                    .attr('cx', (d, i) => xScale(d.year))
+                    .attr('cy', (d) => yScale(d.count))
+                    .attr('x', d => d.year)
+                    .attr('y', d => d.count)
+                    .attr('r', 3)
+                    .attr('onmouseover', 'tooltip(evt)')
+                    .attr('onmouseout', 'removeTooltip(evt)');
+
+                setTimeout(() => {
+                    let graphs = document.getElementsByClassName('graph');
+                    for (let i = 0; i < graphs.length; i++) {
+                        if (graphs[i]) {
+                            graphs[i].style.opacity = '1';
+                        }
+                    }
+                }, 100);
+
+        });
+    }
+
+    function tooltip(evt) {
+        let x = evt.target.getAttribute('x');
+        let y = evt.target.getAttribute('y');
+        let xPosition = evt.target.getAttribute('cx');
+        let yPosition = evt.target.getAttribute('cy');
+
+        // console.warn(evt.target);
+        // console.warn(`Year: ${x}, Count: ${y}, X: ${xPosition}, Y: ${yPosition}`);
+
+        // clear all existing tooltips
+        let tooltips = document.querySelectorAll('.tooltip');
+        tooltips.forEach( value => {
+            document.querySelector('#graphWrapper').removeChild(value);
+        });
+
+        // create the tooltip
+        let tooltip = document.createElement('div');
+        tooltip.setAttribute('class', 'tooltip');
+        tooltip.setAttribute('id', `${makeId(xPosition, yPosition)}`);
+        tooltip.innerHTML = `Year: ${x} <br> Popularity: ${y}`;
+        tooltip.style.left = xPosition;
+        tooltip.style.top = yPosition;
+        document.querySelector('#graphWrapper').appendChild(tooltip);
+    }
+
+    function removeTooltip(evt) {
+        let xPosition = evt.target.getAttribute('cx');
+        let yPosition = evt.target.getAttribute('cy');
+        document.querySelector('#graphWrapper').removeChild(
+            document.querySelector(`#${makeId(xPosition, yPosition)}`)
+        );
+    }
+
+    function makeId(x, y) {
+        return `d${parseInt(x)}x${parseInt(y)}`;
+    }
+
+</script>
+
+<body>
+    <div id='graphWrapper'></div>
+    <input id='queryBox' placeholder="Search something..." text="Australia" />
+    <script>
+        graph("Australia");
+        document.getElementById('queryBox').value = "Australia"
+        
+        document.getElementById('queryBox').addEventListener('keydown', (event) => {
+            if (event.key == "Enter") {
+                graph(event.target.value);
+            }
+        });
+        
+        document.addEventListener('keydown', evt => {
+            if (evt.key == 'q'&& document.querySelector('#queryBox') != document.activeElement) {
+                evt.preventDefault();
+                document.querySelector('#queryBox').focus();
+                document.querySelector('#queryBox').select();
+            }
+
+            if (evt.key == '`') { 
+                clear();
+                evt.preventDefault();
+            }
+        })
+    </script>
+</body>
+
+</html>
