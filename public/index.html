@@ -24,7 +24,7 @@
             opacity: 0;
             fill-opacity: 0;
             position: absolute;
-            top: 0;
+            top: 60px;
             left: 0;
         }
 
@@ -37,17 +37,29 @@
         }
 
         input {
+            font-family: 'Merriweather', serif;
             position: fixed;
-            left: 100px;
-            top: 60px;
+            left: 130px;
+            top: 200px;
             height: 60px;
-            width: 350px;
+            width: 400px;
             border: solid #333333;
-            border-width: 0px 0px 1.5px 0px;
+            border-width: 0px;
             font-size: 36px;
             padding-left: 10px;
             background: rgba(0, 0, 0, 0);
+            text-transform: capitalize;
+        }
 
+        .instructions {
+            position: fixed;
+            top: 250px;
+            left: 130px;
+            font-family: 'Merriweather', serif;
+            color: #222222;
+            padding-left: 10px;
+            font-weight: 300;
+            transition: opacity 0.8s;
         }
 
         .tooltip {
@@ -62,39 +74,57 @@
             position: absolute;
             transform: translate(0, -20px);
         }
+
+        .title {
+            font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            text-align: center;
+            transform: translate(-50%);
+            opacity: 0;
+            transition: opacity 0.6s;
+        }
+
+        .title > h1 {
+            user-select: none;
+            margin: 0px;
+            padding: 0px;
+        }
+
+        .title > h3 {
+            user-select: none;
+            margin: 0px;
+            padding: 0px;
+        }
+
+
     </style>
+    <link href="https://fonts.googleapis.com/css?family=Merriweather:300i,700" rel="stylesheet"> 
 </head>
 <svg width="960" height="0" style="opacity: 1;"></svg>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
     const port = 3000;
     let count = 0;
+    let data = {};
 
     const materials = [
         '#F44336',
-        '#E91E63',
-        '#9C27B0',
-        '#673AB7',
         '#3F51B5',
-        '#2196F3',
         '#03A9F4',
-        '#00BCD4',
         '#009688',
         '#4CAF50',
-        '#8BC34A',
-        '#CDDC39',
         '#FFEB3B',
-        '#FFC107',
         '#FF9800',
-        '#FF5722',
         '#795548',
         '#9E9E9E',
-        '#607D8B'
+        '#607D8B'        
     ]
 
     let margin = { top: 50, right: 50, bottom: 50, left: 50 },
         width = window.innerWidth - margin.left - margin.right,
-        height = window.innerHeight - margin.top - margin.bottom;
+        height = window.innerHeight - margin.top - margin.bottom - 60;
 
     function clear() {
         let graphs = document.getElementsByClassName('graph');
@@ -108,87 +138,116 @@
         }
     }
 
-    function graph(queryString) {
+    function updateGraph(string) {
+        clear();
+        query(string).then(() => {
+            document.querySelector('.title').style.opacity = '1';
+            graph();
+        })
+    }
 
-
-        fetch(`/query/?phrase=${queryString}`)
-            .then(res => res.json())
-            .then(data => {
-                let n = 165;
-                console.log(data);
-                dataset = new Array(166);
-                for (let i = 0; i <= 166; i++) {
-                    dataset[i] = {year: i + 1851, count: 0};
-                }
-                for (i in data) {
-                    dataset[parseInt(data[i].year) - 1851].count = data[i].count;
-                }
-
-                let max = 0;
-                dataset.forEach( element => {
-                    if (+element.count > max) max = +element.count;
-                });
-
-                let xScale = d3.scaleLinear()
-                    .domain([1851, 2016])
-                    .range([0, width]);
-
-                let yScale = d3.scaleLinear()
-                    .domain([0, max])
-                    .range([height, 0]);
-
-                let line = d3.line()
-                    .x(function (d, i) { return xScale(d.year); })
-                    .y(function (d) { return yScale(d.count); })
-                    .curve(d3.curveMonotoneX)
-
-                let svg = d3.select('#graphWrapper')
-                    .append('svg')
-                    .attr('class', 'graph')
-                    .attr('width', width + margin.left + margin.right)
-                    .attr('height', height + margin.top + margin.bottom)
-                    .attr('query', queryString)
-                    .append('g')
-                    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-
-                svg.append('g')
-                    .attr('class', 'x axis')
-                    .attr('transform', `translate(0, ${height})`)
-                    .call(d3.axisBottom(xScale));
-
-                svg.append('g')
-                    .attr('class', 'y axis')
-                    .call(d3.axisLeft(yScale));
-
-                svg.append('path')
-                    .datum(dataset)
-                    .attr('class', 'line')
-                    .attr('style', `stroke: ${materials[(count++) % materials.length]}`)
-                    .attr('d', line);
-
-                svg.selectAll('.dot')
-                    .data(dataset)
-                    .enter()
-                    .append('circle')
-                    .attr('class', 'dot')
-                    .attr('cx', (d, i) => xScale(d.year))
-                    .attr('cy', (d) => yScale(d.count))
-                    .attr('x', d => d.year)
-                    .attr('y', d => d.count)
-                    .attr('r', 3)
-                    .attr('onmouseover', 'tooltip(evt)')
-                    .attr('onmouseout', 'removeTooltip(evt)');
-
-                setTimeout(() => {
-                    let graphs = document.getElementsByClassName('graph');
-                    for (let i = 0; i < graphs.length; i++) {
-                        if (graphs[i]) {
-                            graphs[i].style.opacity = '1';
-                        }
+    function query(string) {
+        return new Promise((resolve, reject) => {
+            fetch(`/query/?phrase=${string.toLowerCase()}`)
+                .then(res => res.json())
+                .then(dataset => {
+                    processedData = new Array(166);
+                    for (let i = 0; i <= 166; i++) {
+                        processedData[i] = { year: i + 1851, count: 0 };
                     }
-                }, 100);
+                    for (i in dataset) {
+                        processedData[parseInt(dataset[i].year) - 1851].count = dataset[i].count;
+                    }
+                    data[string] = processedData;
+                    resolve();
+                })
+                .catch(err => {
+                    reject(err);
+                });
+            });
+    }
 
+    function max() {
+        let a = -1;
+
+        Object.keys(data).forEach( key => {
+            let array = data[key];
+            for (i in array) {
+                if (array[i].count > a) {
+                    a = array[i].count;
+                }
+            }
         });
+        console.log(`Max: ${a}`);
+        return a;
+    }
+
+    function graph() {
+        console.log(data);
+        let n = 165;
+
+        let maxValue = max();
+
+        let xScale = d3.scaleLinear()
+            .domain([1851, 2016])
+            .range([0, width]);
+
+        let yScale = d3.scaleLinear()
+            .domain([0, maxValue])
+            .range([height, 0]);
+
+        var svg = d3.select('#graphWrapper')
+            .append('svg')
+            .attr('class', 'graph')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+            /*.attr('query', queryString)*/
+            .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+        svg.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', `translate(0, ${height})`)
+            .call(d3.axisBottom(xScale));
+
+        svg.append('g')
+            .attr('class', 'y axis')
+            .call(d3.axisLeft(yScale));
+            
+        let line = d3.line()
+            .x( (d, i) => xScale(d.year) )
+            .y( d => yScale(d.count) )
+            .curve(d3.curveMonotoneX);
+
+        for (i in data) {
+            svg.append('path')
+                .datum(data[i])
+                .attr('class', 'line')
+                .attr('style', `stroke: ${materials[(count++) % materials.length]}`)
+                .attr('d', line);
+
+            svg.selectAll('.dot')
+                .data(data[i])
+                .enter()
+                .append('circle')
+                .attr('class', 'dot')
+                .attr('cx', (d, i) => xScale(d.year))
+                .attr('cy', (d) => yScale(d.count))
+                .attr('x', d => d.year)
+                .attr('y', d => d.count)
+                .attr('r', 3)
+                .attr('onmouseover', 'tooltip(evt)')
+                .attr('onmouseout', 'removeTooltip(evt)');
+        }
+
+        setTimeout(() => {
+            let graphs = document.getElementsByClassName('graph');
+            for (let i = 0; i < graphs.length; i++) {
+                if (graphs[i]) {
+                    graphs[i].style.opacity = '1';
+                }
+            }
+        }, 100);
     }
 
     function tooltip(evt) {
@@ -197,12 +256,9 @@
         let xPosition = evt.target.getAttribute('cx');
         let yPosition = evt.target.getAttribute('cy');
 
-        // console.warn(evt.target);
-        // console.warn(`Year: ${x}, Count: ${y}, X: ${xPosition}, Y: ${yPosition}`);
-
         // clear all existing tooltips
         let tooltips = document.querySelectorAll('.tooltip');
-        tooltips.forEach( value => {
+        tooltips.forEach(value => {
             document.querySelector('#graphWrapper').removeChild(value);
         });
 
@@ -232,26 +288,52 @@
 
 <body>
     <div id='graphWrapper'></div>
-    <input id='queryBox' placeholder="Search something..." text="Australia" />
+    <input id='queryBox' placeholder="Search something..."/>
+    <p class='instructions'>
+        Press <b>Q</b> to add to search, <b>X</b> to clear all
+    </p>
+    <div class='title'>
+        <h1>New York Times</h1>
+        <h3>Trend Visualisation</h3>
+    </div>
     <script>
-        graph("Australia");
-        document.getElementById('queryBox').value = "Australia"
-        
+        data = {};
+        document.querySelector('#queryBox').value = '';
+
         document.getElementById('queryBox').addEventListener('keydown', (event) => {
+            if (document.querySelector('#queryBox') != document.activeElement) {
+                return;
+            }
+
             if (event.key == "Enter") {
-                graph(event.target.value);
+                updateGraph(event.target.value);
+                document.querySelector('.instructions').style.opacity = '0.3';
+                document.querySelector('#queryBox').focus();
+                document.querySelector('#queryBox').blur();
+                event.preventDefault();
             }
         });
-        
+
         document.addEventListener('keydown', evt => {
-            if (evt.key == 'q'&& document.querySelector('#queryBox') != document.activeElement) {
+            if (document.querySelector('#queryBox') == document.activeElement) {
+                return;
+            }
+
+            
+            if (evt.key == 'q') {
+                document.querySelector('#queryBox').value = '';
                 evt.preventDefault();
                 document.querySelector('#queryBox').focus();
                 document.querySelector('#queryBox').select();
             }
 
-            if (evt.key == '`') { 
+            if (evt.key == 'x') {
+                data = {};
                 clear();
+                document.querySelector('#queryBox').value = '';
+                document.querySelector('.instructions').style.opacity = '1';
+                document.querySelector('#queryBox').focus();
+                document.querySelector('#queryBox').select();
                 evt.preventDefault();
             }
         })

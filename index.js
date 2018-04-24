@@ -31,7 +31,7 @@ server.use(express.static('public'));
 server.get('/query', (req, response) => {
 
 	console.log(`Searching for '${req.query.phrase}'`)
-	if (!req.query.phrase) response.send("Please provide search phrase");
+	if (!req.query.phrase) response.send("Pleaswe provide search phrase");
 	
 	let query = `	SELECT DATE_FORMAT(pub_date, '%Y') as 'year',
 					COUNT(*) as 'count'
