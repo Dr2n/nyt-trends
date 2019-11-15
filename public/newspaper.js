@@ -51,7 +51,7 @@ function query(string) {
                     processedData[i] = { year: i + 1851, count: 0 };
                 }
                 for (i in dataset) {
-                    processedData[parseInt(dataset[i].year) - 1851].count = dataset[i].count;
+                    processedData[parseInt(dataset[i].year) - 1851].count = dataset[i].count * yearCount[dataset[i].year];
                 }
                 data[string] = processedData;
                 resolve();
@@ -103,11 +103,6 @@ function graph(string) {
         .attr('class', 'x axis')
         .attr('transform', `translate(0, ${height})`)
         .call(d3.axisBottom(xScale));
-
-    svg.append('text')   
-        .attr('transform', 'translate(' + (width/2) + ' ,' + (height + margin.top + 20) + ')')
-        .style('text-anchor', 'middle')
-        .text('Date');
 
     svg.append('g')
         .attr('class', 'y axis')
@@ -187,6 +182,20 @@ function removeTooltip(evt) {
     document.querySelector('#graphWrapper').removeChild(
         document.querySelector(`#${makeId(xPosition, yPosition)}`)
     );
+}
+
+function saveSvg(svgEl, name) {
+    svgEl.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    var svgData = svgEl.outerHTML;
+    var preface = '<?xml version="1.0" standalone="no"?>\r\n';
+    var svgBlob = new Blob([preface, svgData], {type:"image/svg+xml;charset=utf-8"});
+    var svgUrl = URL.createObjectURL(svgBlob);
+    var downloadLink = document.createElement("a");
+    downloadLink.href = svgUrl;
+    downloadLink.download = name;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
 }
 
 function makeId(x, y) {

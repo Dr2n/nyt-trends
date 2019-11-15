@@ -4,25 +4,29 @@
     <title>NYT Trends</title>
     <link rel="stylesheet" href="style.css" />
     <link href="https://fonts.googleapis.com/css?family=Merriweather:300i,700" rel="stylesheet">
-    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="shortcut icon" href="/favicon.ico">
 </head>
 <svg width="960" height="0" style="opacity: 1;"></svg>
 <script src="https://d3js.org/d3.v4.min.js"></script>
-<script src="year-count.js"></script>
-<script src="/newspaper.js"></script>
+<script src="./newspaper.js"></script>
+<script src="./bubble_chart.js"></script>
 
 <body>
     <div id='graphWrapper'></div>
     <input id='queryBox' placeholder="Search something..." />
     <p class='instructions'>
-        Press Q to add to search, X to clear all
+        Press Q to add to search
     </p>
-    <img src='loading.gif' class='loading' />
+    <img src='/loading.gif' class='loading' />
     <div class='title'>
         <h1>New York Times</h1>
         <h3>Trending Visualisation</h3>
     </div>
-    <div class='legend-container'></div>
+    <div class="slider">
+        <input class="time-traveler" type="range" min="1852" max="2017" step="1" value="2000" class='legend-container'>
+        <span class="time-traveler-display">2000</span>
+    </div>
+    <div class="chart" id="chart"><svg></svg></div>
 </body>
 
 </html>

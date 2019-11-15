@@ -10,8 +10,8 @@ const request 	= require('request');
 const mysql     = require('mysql');
 const stopWords = require('./stopwords');
 
-let startYear 	= 1978;
-let endYear 	= 2017;
+let startYear 	= 1852;
+let endYear 	= 1870;
 let apiKey 		= '8f4b1028d941458d9041934219d8b96f';
 
 // ----------------------------------------------------------------
@@ -40,7 +40,7 @@ let startTime = Date.now();
 
 (async () => {
 	for (let year = startYear; year < endYear + 1; year++) {
-		for (let month = 10; month < 13; month++) {
+		for (let month = 1; month < 13; month++) {
 			startTime = Date.now();
 			console.log();
 			console.log(`Making request for articles from ${month.toString().padStart(2, '0')}/${year}`);
