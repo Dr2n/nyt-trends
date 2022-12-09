@@ -16,7 +16,7 @@
   "license": "ISC",
   "homepage": "https://bitbucket.org/dr2n/newspaper-visualisation#readme",
   "dependencies": {
-    "express": "^4.16.3",
+    "express": "^4.17.3",
     "mysql": "github:mysqljs/mysql",
     "request": "^2.85.0"
   }
